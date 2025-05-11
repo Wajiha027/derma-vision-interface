@@ -1,9 +1,8 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Upload } from "lucide-react";
+import { Upload, BarChart3, ClipboardList } from "lucide-react";
 
 const Index = () => {
   return (
@@ -55,11 +54,7 @@ const Index = () => {
               
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
                 <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M2 12.5h2m1 0h2m1 0h2m1 0h2m1 0h2m1 0h2m3 0h1" />
-                    <path d="M19 15V9" />
-                    <path d="M15 18v-7l-4-8-4 8v7" />
-                  </svg>
+                  <BarChart3 className="h-7 w-7" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-800 mb-3">AI Analysis</h3>
                 <p className="text-gray-600">
@@ -69,12 +64,7 @@ const Index = () => {
               
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
                 <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2h11A2.5 2.5 0 0 1 20 4.5v15a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 19.5Z" />
-                    <path d="M8 7h8" />
-                    <path d="M8 11h8" />
-                    <path d="M8 15h5" />
-                  </svg>
+                  <ClipboardList className="h-7 w-7" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-800 mb-3">Get Results</h3>
                 <p className="text-gray-600">
