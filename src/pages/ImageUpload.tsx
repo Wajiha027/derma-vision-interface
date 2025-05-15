@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ImageDropZone from "@/components/ImageDropZone";
+import { getRandomMockResult } from "@/data/mockAcneData";
 
 const ImageUpload = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -29,11 +30,13 @@ const ImageUpload = () => {
 
     setIsAnalyzing(true);
     
-    // Mock analysis request - replace with actual API call
+    // Simulate API call with our mock data
     setTimeout(() => {
       setIsAnalyzing(false);
-      // Navigate to results page with mock result ID
-      navigate("/results/demo");
+      
+      // Get a random mock result for demo purposes
+      const resultId = getRandomMockResult();
+      navigate(`/results/${resultId}`);
     }, 3000);
   };
   

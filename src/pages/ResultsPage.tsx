@@ -2,86 +2,35 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Check } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ResultVisualization from "@/components/ResultVisualization";
-
-interface BoundingBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  class: string;
-  confidence: number;
-}
-
-interface AnalysisResult {
-  id: string;
-  imageUrl: string;
-  date: string;
-  severity: 'mild' | 'moderate' | 'severe';
-  detections: BoundingBox[];
-}
+import { mockAcneData, MockImageData } from "@/data/mockAcneData";
 
 const ResultsPage = () => {
   const { resultId } = useParams<{ resultId: string }>();
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [result, setResult] = useState<MockImageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     setIsLoading(true);
     
-    // Mock API call to fetch result data
+    // Simulate API call with our mock data
     setTimeout(() => {
-      // Demo/mock data for visualization
-      const mockResult: AnalysisResult = {
-        id: resultId || 'demo',
-        imageUrl: '/placeholder.svg', // Replace with actual image URL in a real app
-        date: new Date().toISOString(),
-        severity: 'moderate',
-        detections: [
-          {
-            x: 50,
-            y: 100,
-            width: 30,
-            height: 30,
-            class: 'papule',
-            confidence: 0.89
-          },
-          {
-            x: 120,
-            y: 150,
-            width: 25,
-            height: 25,
-            class: 'pustule',
-            confidence: 0.76
-          },
-          {
-            x: 200,
-            y: 180,
-            width: 20,
-            height: 20,
-            class: 'papule',
-            confidence: 0.92
-          },
-          {
-            x: 250,
-            y: 120,
-            width: 22,
-            height: 22,
-            class: 'pustule',
-            confidence: 0.81
-          }
-        ]
-      };
-      
-      setResult(mockResult);
+      if (resultId && mockAcneData[resultId]) {
+        setResult(mockAcneData[resultId]);
+      } else {
+        // If resultId doesn't exist in our mock data, use the demo data
+        setResult(mockAcneData["demo"]);
+      }
       setIsLoading(false);
     }, 1500);
   }, [resultId]);
   
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = () => {
+    const date = new Date();
     return new Intl.DateTimeFormat('en-US', { 
       month: 'short', 
       day: 'numeric', 
@@ -102,7 +51,7 @@ const ResultsPage = () => {
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">Skin Analysis Results</h1>
                 {!isLoading && result && (
-                  <p className="text-gray-600">Analysis completed on {formatDate(result.date)}</p>
+                  <p className="text-gray-600">Analysis completed on {formatDate()}</p>
                 )}
               </div>
               
@@ -125,11 +74,42 @@ const ResultsPage = () => {
               </div>
             </div>
           ) : result ? (
-            <ResultVisualization 
-              imageUrl={result.imageUrl}
-              detections={result.detections}
-              severity={result.severity}
-            />
+            <>
+              {result.hasAcne ? (
+                <ResultVisualization 
+                  imageUrl="/placeholder.svg" // Replace with actual image URL in a real app
+                  detections={result.detections}
+                  severity={result.severity || "mild"}
+                  severityGrade={result.severityGrade}
+                />
+              ) : (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+                  <div className="flex flex-col items-center justify-center text-center max-w-lg mx-auto">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                      <Check className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">No Acne Detected</h2>
+                    <p className="text-gray-600 mb-6">
+                      Our analysis didn't detect any significant acne on your skin. Keep up your good skincare routine!
+                    </p>
+                    
+                    <Alert className="mb-6 bg-blue-50 border-blue-100">
+                      <AlertDescription>
+                        Even with clear skin, it's important to maintain a consistent skincare routine, stay hydrated, and protect your skin from the sun.
+                      </AlertDescription>
+                    </Alert>
+                    
+                    <Link to="/upload">
+                      <Button>Analyze Another Image</Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-6 text-center text-sm text-gray-500 italic">
+                Disclaimer: This analysis is generated by AI and should not replace professional medical advice.
+              </div>
+            </>
           ) : (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
               <p className="text-gray-600">Result not found or has been deleted.</p>
