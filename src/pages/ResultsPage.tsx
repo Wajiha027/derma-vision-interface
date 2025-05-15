@@ -94,10 +94,12 @@ const ResultsPage = () => {
             <>
               {result.hasAcne ? (
                 <ResultVisualization 
-                  imageUrl="/placeholder.svg" // Replace with actual image URL in a real app
+                  imageUrl={result.imageUrl || "/placeholder.svg"}
                   detections={result.detections}
                   severity={result.severity || "mild"}
                   severityGrade={result.severityGrade}
+                  imageWidth={result.imageWidth}
+                  imageHeight={result.imageHeight}
                 />
               ) : (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">

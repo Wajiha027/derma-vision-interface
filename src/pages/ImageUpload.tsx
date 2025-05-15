@@ -32,6 +32,9 @@ const ImageUpload = () => {
     setIsAnalyzing(true);
     
     try {
+      // Create an object URL for the image
+      const imageUrl = URL.createObjectURL(selectedImage);
+      
       // Call Roboflow API
       const roboflowResult = await analyzeImageWithRoboflow(selectedImage);
       
@@ -50,8 +53,10 @@ const ImageUpload = () => {
         detections: roboflowResult.predictions,
         imageWidth: roboflowResult.image?.width || 640, // Default width if not provided
         imageHeight: roboflowResult.image?.height || 480, // Default height if not provided
-        imageUrl: URL.createObjectURL(selectedImage)
+        imageUrl: imageUrl
       };
+      
+      console.log("Storing result:", result);
       
       // Store the result in sessionStorage
       sessionStorage.setItem(resultId, JSON.stringify(result));

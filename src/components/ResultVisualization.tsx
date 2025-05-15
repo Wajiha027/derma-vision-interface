@@ -24,6 +24,7 @@ const ResultVisualization = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [actualImage, setActualImage] = useState<HTMLImageElement | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   
   const severityColorMap = {
     mild: 'bg-green-100 text-green-800 border-green-200',
@@ -38,6 +39,18 @@ const ResultVisualization = ({
   };
 
   useEffect(() => {
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+      setActualImage(img);
+      setImageLoaded(true);
+    };
+    img.onerror = (err) => {
+      console.error("Failed to load image:", err);
+    };
+  }, [imageUrl]);
+
+  useEffect(() => {
     if (!imageLoaded || !actualImage) return;
     
     const canvas = canvasRef.current;
@@ -50,6 +63,9 @@ const ResultVisualization = ({
     canvas.width = actualImage.width;
     canvas.height = actualImage.height;
     
+    console.log("Image dimensions:", actualImage.width, "x", actualImage.height);
+    console.log("Detections:", detections);
+    
     // Draw the base image
     ctx.drawImage(actualImage, 0, 0, canvas.width, canvas.height);
     
@@ -57,6 +73,9 @@ const ResultVisualization = ({
     // so we need to scale them to our canvas size
     const scaleX = imageWidth && imageWidth !== 0 ? canvas.width / imageWidth : 1;
     const scaleY = imageHeight && imageHeight !== 0 ? canvas.height / imageHeight : 1;
+    
+    console.log("Scaling factors:", scaleX, scaleY);
+    console.log("Canvas dimensions:", canvas.width, "x", canvas.height);
     
     // Draw bounding boxes for detections
     detections.forEach(box => {
@@ -66,6 +85,8 @@ const ResultVisualization = ({
       const y = (box.y - box.height / 2) * scaleY; 
       const width = box.width * scaleX;
       const height = box.height * scaleY;
+      
+      console.log("Drawing box at:", x, y, width, height);
       
       // Draw the bounding box
       ctx.strokeStyle = '#14b8a6'; // Primary teal color
@@ -82,11 +103,6 @@ const ResultVisualization = ({
       ctx.fillText(`${box.class} ${Math.round(box.confidence * 100)}%`, x + 5, y - 5);
     });
   }, [imageLoaded, actualImage, detections, imageWidth, imageHeight]);
-
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    setActualImage(e.currentTarget);
-    setImageLoaded(true);
-  };
 
   const renderSeverityStars = () => {
     const grade = severityGrade || (severity === 'mild' ? 1 : severity === 'moderate' ? 2 : 3);
@@ -117,16 +133,25 @@ const ResultVisualization = ({
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1">
               <div className="relative bg-gray-100 rounded-lg overflow-hidden">
-                <img 
-                  src={imageUrl} 
-                  alt="Skin analysis"
-                  className="w-full h-auto hidden" 
-                  onLoad={handleImageLoad}
-                />
+                {/* Actual image is set to display none, just used for reference */}
+                {imageUrl && (
+                  <img 
+                    ref={imgRef}
+                    src={imageUrl} 
+                    alt="Skin analysis"
+                    className="w-full h-auto hidden" 
+                    onLoad={() => console.log("Image loaded from direct source")}
+                  />
+                )}
                 <canvas 
                   ref={canvasRef} 
                   className="w-full h-auto rounded-lg"
                 />
+                {!imageLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+                  </div>
+                )}
               </div>
             </div>
             
