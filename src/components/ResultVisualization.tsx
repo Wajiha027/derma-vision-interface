@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RoboflowDetection } from '@/utils/roboflowAPI';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Eye, Info } from 'lucide-react';
 
 interface ResultVisualizationProps {
   imageUrl: string;
@@ -24,6 +26,7 @@ const ResultVisualization = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [actualImage, setActualImage] = useState<HTMLImageElement | null>(null);
+  const [showDetections, setShowDetections] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
   
   const severityColorMap = {
@@ -40,6 +43,7 @@ const ResultVisualization = ({
 
   useEffect(() => {
     const img = new Image();
+    img.crossOrigin = "Anonymous";  // Handle CORS issues
     img.src = imageUrl;
     img.onload = () => {
       setActualImage(img);
@@ -63,46 +67,43 @@ const ResultVisualization = ({
     canvas.width = actualImage.width;
     canvas.height = actualImage.height;
     
-    console.log("Image dimensions:", actualImage.width, "x", actualImage.height);
-    console.log("Detections:", detections);
-    
     // Draw the base image
     ctx.drawImage(actualImage, 0, 0, canvas.width, canvas.height);
     
-    // Get scaling factors if needed - Roboflow provides coordinates in absolute values
-    // so we need to scale them to our canvas size
-    const scaleX = imageWidth && imageWidth !== 0 ? canvas.width / imageWidth : 1;
-    const scaleY = imageHeight && imageHeight !== 0 ? canvas.height / imageHeight : 1;
-    
-    console.log("Scaling factors:", scaleX, scaleY);
-    console.log("Canvas dimensions:", canvas.width, "x", canvas.height);
-    
-    // Draw bounding boxes for detections
-    detections.forEach(box => {
-      // Calculate the coordinates for the bounding box
-      // Roboflow returns the center point (x,y) and width/height
-      const x = (box.x - box.width / 2) * scaleX;
-      const y = (box.y - box.height / 2) * scaleY; 
-      const width = box.width * scaleX;
-      const height = box.height * scaleY;
+    if (showDetections) {
+      // Get scaling factors if needed
+      const scaleX = imageWidth && imageWidth !== 0 ? canvas.width / imageWidth : 1;
+      const scaleY = imageHeight && imageHeight !== 0 ? canvas.height / imageHeight : 1;
       
-      console.log("Drawing box at:", x, y, width, height);
-      
-      // Draw the bounding box
-      ctx.strokeStyle = '#14b8a6'; // Primary teal color
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.rect(x, y, width, height);
-      ctx.stroke();
-      
-      // Add label to the bounding box
-      ctx.fillStyle = '#14b8a6';
-      ctx.fillRect(x, y - 20, 80, 20);
-      ctx.fillStyle = 'white';
-      ctx.font = '12px Arial';
-      ctx.fillText(`${box.class} ${Math.round(box.confidence * 100)}%`, x + 5, y - 5);
-    });
-  }, [imageLoaded, actualImage, detections, imageWidth, imageHeight]);
+      // Draw bounding boxes for detections
+      detections.forEach((box, index) => {
+        // Calculate the coordinates for the bounding box
+        const x = (box.x - box.width / 2) * scaleX;
+        const y = (box.y - box.height / 2) * scaleY; 
+        const width = box.width * scaleX;
+        const height = box.height * scaleY;
+        
+        // Draw the bounding box
+        ctx.strokeStyle = '#14b8a6'; // Primary teal color
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.rect(x, y, width, height);
+        ctx.stroke();
+        
+        // Add label to the bounding box
+        ctx.fillStyle = '#14b8a6';
+        ctx.fillRect(x, y - 20, 80, 20);
+        ctx.fillStyle = 'white';
+        ctx.font = '12px Arial';
+        ctx.fillText(`${Math.round(box.confidence * 100)}%`, x + 5, y - 5);
+        
+        // Add number label
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(`${index + 1}`, x + width - 15, y - 5);
+      });
+    }
+  }, [imageLoaded, actualImage, detections, showDetections, imageWidth, imageHeight]);
 
   const renderSeverityStars = () => {
     const grade = severityGrade || (severity === 'mild' ? 1 : severity === 'moderate' ? 2 : 3);
@@ -126,21 +127,27 @@ const ResultVisualization = ({
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden">
-        <CardHeader className="bg-gray-50 pb-3">
+        <CardHeader className="bg-gray-50 pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-lg text-gray-700">Acne Detection Results</CardTitle>
+          <button 
+            onClick={() => setShowDetections(!showDetections)} 
+            className="flex items-center space-x-1 text-sm text-gray-500 hover:text-primary-600"
+          >
+            <Eye className="h-4 w-4" />
+            <span>{showDetections ? "Hide" : "Show"} Detections</span>
+          </button>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1">
               <div className="relative bg-gray-100 rounded-lg overflow-hidden">
-                {/* Actual image is set to display none, just used for reference */}
+                {/* Hidden reference image */}
                 {imageUrl && (
                   <img 
                     ref={imgRef}
                     src={imageUrl} 
                     alt="Skin analysis"
                     className="w-full h-auto hidden" 
-                    onLoad={() => console.log("Image loaded from direct source")}
                   />
                 )}
                 <canvas 
@@ -172,18 +179,42 @@ const ResultVisualization = ({
               
               <div>
                 <h3 className="font-medium text-gray-700 mb-2">Detected Issues</h3>
-                <ul className="space-y-2">
-                  {detections.length > 0 ? (
-                    detections.map((detection, index) => (
-                      <li key={index} className="flex items-center text-sm text-gray-600">
-                        <span className="w-2 h-2 bg-primary-500 rounded-full mr-2"></span>
-                        {detection.class} ({Math.round(detection.confidence * 100)}% confidence)
-                      </li>
-                    ))
-                  ) : (
-                    <li className="text-sm text-gray-500">No issues detected</li>
-                  )}
-                </ul>
+                {detections.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead>Confidence</TableHead>
+                        <TableHead>Location</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {detections.map((detection, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{index + 1}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-primary-500 h-2 rounded-full" 
+                                  style={{ width: `${Math.round(detection.confidence * 100)}%` }}
+                                ></div>
+                              </div>
+                              <span className="ml-2 text-xs font-medium">
+                                {Math.round(detection.confidence * 100)}%
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs text-gray-500">
+                            x: {Math.round(detection.x)}, y: {Math.round(detection.y)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-sm text-gray-500">No issues detected</p>
+                )}
               </div>
               
               <div>
