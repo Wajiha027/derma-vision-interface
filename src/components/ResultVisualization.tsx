@@ -2,19 +2,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
-interface BoundingBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  class: string;
-  confidence: number;
-}
+import { RoboflowDetection } from '@/utils/roboflowAPI';
 
 interface ResultVisualizationProps {
   imageUrl: string;
-  detections: BoundingBox[];
+  detections: RoboflowDetection[];
   severity: 'mild' | 'moderate' | 'severe';
   severityGrade?: 1 | 2 | 3;
   imageWidth?: number;
@@ -61,18 +53,21 @@ const ResultVisualization = ({
     // Draw the base image
     ctx.drawImage(actualImage, 0, 0, canvas.width, canvas.height);
     
-    // Get scaling factors if needed
+    // Get scaling factors if needed - Roboflow provides coordinates in absolute values
+    // so we need to scale them to our canvas size
     const scaleX = imageWidth && imageWidth !== 0 ? canvas.width / imageWidth : 1;
     const scaleY = imageHeight && imageHeight !== 0 ? canvas.height / imageHeight : 1;
     
     // Draw bounding boxes for detections
     detections.forEach(box => {
-      // Scale coordinates if coming from Roboflow API
-      const x = box.x * scaleX;
-      const y = box.y * scaleY;
+      // Calculate the coordinates for the bounding box
+      // Roboflow returns the center point (x,y) and width/height
+      const x = (box.x - box.width / 2) * scaleX;
+      const y = (box.y - box.height / 2) * scaleY; 
       const width = box.width * scaleX;
       const height = box.height * scaleY;
       
+      // Draw the bounding box
       ctx.strokeStyle = '#14b8a6'; // Primary teal color
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -81,7 +76,7 @@ const ResultVisualization = ({
       
       // Add label to the bounding box
       ctx.fillStyle = '#14b8a6';
-      ctx.fillRect(x, y - 20, 60, 20);
+      ctx.fillRect(x, y - 20, 80, 20);
       ctx.fillStyle = 'white';
       ctx.font = '12px Arial';
       ctx.fillText(`${box.class} ${Math.round(box.confidence * 100)}%`, x + 5, y - 5);

@@ -11,11 +11,13 @@ export interface RoboflowDetection {
   height: number;
   class: string;
   confidence: number;
+  class_id?: number;
+  detection_id?: string;
 }
 
 export interface RoboflowResponse {
-  time: number;
-  image: {
+  time?: number;
+  image?: {
     width: number;
     height: number;
   };
@@ -26,6 +28,8 @@ export const analyzeImageWithRoboflow = async (imageFile: File): Promise<Roboflo
   try {
     // Convert the image file to base64
     const base64Image = await fileToBase64(imageFile);
+    
+    console.log("Sending image to Roboflow API...");
     
     // Make the API call
     const response = await axios({
@@ -39,6 +43,8 @@ export const analyzeImageWithRoboflow = async (imageFile: File): Promise<Roboflo
         "Content-Type": "application/x-www-form-urlencoded"
       }
     });
+    
+    console.log("Roboflow API response:", response.data);
     
     return response.data;
   } catch (error) {
@@ -70,9 +76,11 @@ export const calculateAcneSeverity = (detections: RoboflowDetection[]): {
   const totalDetections = detections.length;
   const avgConfidence = detections.reduce((sum, detection) => sum + detection.confidence, 0) / totalDetections;
   
-  if (totalDetections < 3 || (totalDetections < 5 && avgConfidence < 0.8)) {
+  console.log(`Total detections: ${totalDetections}, Average confidence: ${avgConfidence}`);
+  
+  if (totalDetections < 3 || (totalDetections < 5 && avgConfidence < 0.5)) {
     return { severity: 'mild' as const, severityGrade: 1 };
-  } else if (totalDetections < 8 || (totalDetections < 12 && avgConfidence < 0.85)) {
+  } else if (totalDetections < 8 || (totalDetections < 12 && avgConfidence < 0.6)) {
     return { severity: 'moderate' as const, severityGrade: 2 };
   } else {
     return { severity: 'severe' as const, severityGrade: 3 };

@@ -48,8 +48,8 @@ const ImageUpload = () => {
         severity,
         severityGrade,
         detections: roboflowResult.predictions,
-        imageWidth: roboflowResult.image.width,
-        imageHeight: roboflowResult.image.height,
+        imageWidth: roboflowResult.image?.width || 640, // Default width if not provided
+        imageHeight: roboflowResult.image?.height || 480, // Default height if not provided
         imageUrl: URL.createObjectURL(selectedImage)
       };
       
@@ -63,7 +63,7 @@ const ImageUpload = () => {
       toast({
         variant: "destructive",
         title: "Analysis failed",
-        description: "There was an error analyzing your image. Please try again.",
+        description: "There was an error analyzing your image. Using mock data for demonstration.",
       });
       
       // Fallback to mock data for demo purposes

@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ResultVisualization from "@/components/ResultVisualization";
 import { mockAcneData, MockImageData } from "@/data/mockAcneData";
+import { RoboflowDetection } from "@/utils/roboflowAPI";
 
 interface AnalysisResult extends MockImageData {
   imageWidth?: number;
@@ -28,14 +29,18 @@ const ResultsPage = () => {
     
     if (storedResult) {
       // We have a result from the Roboflow API
-      setResult(JSON.parse(storedResult));
+      const parsedResult = JSON.parse(storedResult);
+      console.log("Loading result from session storage:", parsedResult);
+      setResult(parsedResult);
       setIsLoading(false);
     } else if (resultId && mockAcneData[resultId]) {
       // Fallback to mock data
+      console.log("Using mock data for resultId:", resultId);
       setResult(mockAcneData[resultId]);
       setIsLoading(false);
     } else {
       // If resultId doesn't exist anywhere, use the demo data
+      console.log("Using demo data");
       setResult(mockAcneData["demo"]);
       setIsLoading(false);
     }
