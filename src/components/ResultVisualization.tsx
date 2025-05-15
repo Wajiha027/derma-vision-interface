@@ -17,11 +17,21 @@ interface ResultVisualizationProps {
   detections: BoundingBox[];
   severity: 'mild' | 'moderate' | 'severe';
   severityGrade?: 1 | 2 | 3;
+  imageWidth?: number;
+  imageHeight?: number;
 }
 
-const ResultVisualization = ({ imageUrl, detections, severity, severityGrade }: ResultVisualizationProps) => {
+const ResultVisualization = ({ 
+  imageUrl, 
+  detections, 
+  severity, 
+  severityGrade,
+  imageWidth,
+  imageHeight
+}: ResultVisualizationProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [actualImage, setActualImage] = useState<HTMLImageElement | null>(null);
   
   const severityColorMap = {
     mild: 'bg-green-100 text-green-800 border-green-200',
@@ -36,40 +46,52 @@ const ResultVisualization = ({ imageUrl, detections, severity, severityGrade }: 
   };
 
   useEffect(() => {
+    if (!imageLoaded || !actualImage) return;
+    
     const canvas = canvasRef.current;
-    if (!canvas || !imageLoaded) return;
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    const image = new Image();
-    image.src = imageUrl;
     
-    image.onload = () => {
-      // Set canvas dimensions to match the image
-      canvas.width = image.width;
-      canvas.height = image.height;
+    // Set canvas dimensions to match the loaded image
+    canvas.width = actualImage.width;
+    canvas.height = actualImage.height;
+    
+    // Draw the base image
+    ctx.drawImage(actualImage, 0, 0, canvas.width, canvas.height);
+    
+    // Get scaling factors if needed
+    const scaleX = imageWidth && imageWidth !== 0 ? canvas.width / imageWidth : 1;
+    const scaleY = imageHeight && imageHeight !== 0 ? canvas.height / imageHeight : 1;
+    
+    // Draw bounding boxes for detections
+    detections.forEach(box => {
+      // Scale coordinates if coming from Roboflow API
+      const x = box.x * scaleX;
+      const y = box.y * scaleY;
+      const width = box.width * scaleX;
+      const height = box.height * scaleY;
       
-      // Draw the base image
-      ctx.drawImage(image, 0, 0);
+      ctx.strokeStyle = '#14b8a6'; // Primary teal color
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.rect(x, y, width, height);
+      ctx.stroke();
       
-      // Draw bounding boxes for detections
-      detections.forEach(box => {
-        ctx.strokeStyle = '#14b8a6'; // Primary teal color
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.rect(box.x, box.y, box.width, box.height);
-        ctx.stroke();
-        
-        // Optional: Add label to the bounding box
-        ctx.fillStyle = '#14b8a6';
-        ctx.fillRect(box.x, box.y - 20, 60, 20);
-        ctx.fillStyle = 'white';
-        ctx.font = '12px Arial';
-        ctx.fillText(`${box.class} ${Math.round(box.confidence * 100)}%`, box.x + 5, box.y - 5);
-      });
-    };
-  }, [imageUrl, detections, imageLoaded]);
+      // Add label to the bounding box
+      ctx.fillStyle = '#14b8a6';
+      ctx.fillRect(x, y - 20, 60, 20);
+      ctx.fillStyle = 'white';
+      ctx.font = '12px Arial';
+      ctx.fillText(`${box.class} ${Math.round(box.confidence * 100)}%`, x + 5, y - 5);
+    });
+  }, [imageLoaded, actualImage, detections, imageWidth, imageHeight]);
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setActualImage(e.currentTarget);
+    setImageLoaded(true);
+  };
 
   const renderSeverityStars = () => {
     const grade = severityGrade || (severity === 'mild' ? 1 : severity === 'moderate' ? 2 : 3);
@@ -102,9 +124,9 @@ const ResultVisualization = ({ imageUrl, detections, severity, severityGrade }: 
               <div className="relative bg-gray-100 rounded-lg overflow-hidden">
                 <img 
                   src={imageUrl} 
-                  alt="Original" 
+                  alt="Skin analysis"
                   className="w-full h-auto hidden" 
-                  onLoad={() => setImageLoaded(true)}
+                  onLoad={handleImageLoad}
                 />
                 <canvas 
                   ref={canvasRef} 

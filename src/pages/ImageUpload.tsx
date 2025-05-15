@@ -6,7 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ImageDropZone from "@/components/ImageDropZone";
-import { getRandomMockResult } from "@/data/mockAcneData";
+import { analyzeImageWithRoboflow, calculateAcneSeverity, RoboflowDetection } from "@/utils/roboflowAPI";
+import { mockAcneData } from "@/data/mockAcneData";
 
 const ImageUpload = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -18,7 +19,7 @@ const ImageUpload = () => {
     setSelectedImage(file);
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!selectedImage) {
       toast({
         variant: "destructive",
@@ -30,14 +31,47 @@ const ImageUpload = () => {
 
     setIsAnalyzing(true);
     
-    // Simulate API call with our mock data
-    setTimeout(() => {
-      setIsAnalyzing(false);
+    try {
+      // Call Roboflow API
+      const roboflowResult = await analyzeImageWithRoboflow(selectedImage);
       
-      // Get a random mock result for demo purposes
-      const resultId = getRandomMockResult();
+      // Calculate severity based on detections
+      const { severity, severityGrade } = calculateAcneSeverity(roboflowResult.predictions);
+      
+      // Create a unique ID for this analysis
+      const resultId = `result_${Date.now()}`;
+      
+      // Create a result object based on the Roboflow response
+      const result = {
+        id: resultId,
+        hasAcne: roboflowResult.predictions.length > 0,
+        severity,
+        severityGrade,
+        detections: roboflowResult.predictions,
+        imageWidth: roboflowResult.image.width,
+        imageHeight: roboflowResult.image.height,
+        imageUrl: URL.createObjectURL(selectedImage)
+      };
+      
+      // Store the result in sessionStorage
+      sessionStorage.setItem(resultId, JSON.stringify(result));
+      
+      // Navigate to results page
       navigate(`/results/${resultId}`);
-    }, 3000);
+    } catch (error) {
+      console.error("Error during image analysis:", error);
+      toast({
+        variant: "destructive",
+        title: "Analysis failed",
+        description: "There was an error analyzing your image. Please try again.",
+      });
+      
+      // Fallback to mock data for demo purposes
+      const mockResultId = "demo";
+      navigate(`/results/${mockResultId}`);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
   
   return (

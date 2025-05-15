@@ -9,24 +9,36 @@ import Footer from "@/components/Footer";
 import ResultVisualization from "@/components/ResultVisualization";
 import { mockAcneData, MockImageData } from "@/data/mockAcneData";
 
+interface AnalysisResult extends MockImageData {
+  imageWidth?: number;
+  imageHeight?: number;
+  imageUrl?: string;
+}
+
 const ResultsPage = () => {
   const { resultId } = useParams<{ resultId: string }>();
-  const [result, setResult] = useState<MockImageData | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     setIsLoading(true);
     
-    // Simulate API call with our mock data
-    setTimeout(() => {
-      if (resultId && mockAcneData[resultId]) {
-        setResult(mockAcneData[resultId]);
-      } else {
-        // If resultId doesn't exist in our mock data, use the demo data
-        setResult(mockAcneData["demo"]);
-      }
+    // Check if this is a real-time result stored in sessionStorage
+    const storedResult = resultId ? sessionStorage.getItem(resultId) : null;
+    
+    if (storedResult) {
+      // We have a result from the Roboflow API
+      setResult(JSON.parse(storedResult));
       setIsLoading(false);
-    }, 1500);
+    } else if (resultId && mockAcneData[resultId]) {
+      // Fallback to mock data
+      setResult(mockAcneData[resultId]);
+      setIsLoading(false);
+    } else {
+      // If resultId doesn't exist anywhere, use the demo data
+      setResult(mockAcneData["demo"]);
+      setIsLoading(false);
+    }
   }, [resultId]);
   
   const formatDate = () => {
