@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ interface HistoryItem {
   imageUrl: string;
   severity: "mild" | "moderate" | "severe";
   detectionCount: number;
+  confidence?: number; // Added confidence property
 }
 
 const History = () => {
@@ -21,35 +21,40 @@ const History = () => {
       date: "2025-05-08T15:30:00",
       imageUrl: "/placeholder.svg",
       severity: "mild",
-      detectionCount: 3
+      detectionCount: 3,
+      confidence: 0.72
     },
     {
       id: "2",
       date: "2025-05-01T10:15:00",
       imageUrl: "/placeholder.svg",
       severity: "moderate",
-      detectionCount: 7
+      detectionCount: 7,
+      confidence: 0.85
     },
     {
       id: "3",
       date: "2025-04-24T09:20:00",
       imageUrl: "/placeholder.svg",
       severity: "moderate",
-      detectionCount: 8
+      detectionCount: 8,
+      confidence: 0.68
     },
     {
       id: "4",
       date: "2025-04-17T14:10:00",
       imageUrl: "/placeholder.svg",
       severity: "severe",
-      detectionCount: 12
+      detectionCount: 12,
+      confidence: 0.94
     },
     {
       id: "5",
       date: "2025-04-10T11:45:00",
       imageUrl: "/placeholder.svg",
       severity: "moderate",
-      detectionCount: 6
+      detectionCount: 6,
+      confidence: 0.77
     }
   ]);
 
@@ -109,6 +114,7 @@ const History = () => {
                       <th className="px-6 py-3 text-left">Image</th>
                       <th className="px-6 py-3 text-left">Severity</th>
                       <th className="px-6 py-3 text-left">Detections</th>
+                      <th className="px-6 py-3 text-left">Confidence</th>
                       <th className="px-6 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -127,6 +133,9 @@ const History = () => {
                         </td>
                         <td className="px-6 py-4">{getSeverityBadge(item.severity)}</td>
                         <td className="px-6 py-4">{item.detectionCount} issues found</td>
+                        <td className="px-6 py-4">
+                          {item.confidence ? `${Math.round(item.confidence * 100)}%` : 'N/A'}
+                        </td>
                         <td className="px-6 py-4 text-right">
                           <Link to={`/results/${item.id}`}>
                             <Button variant="outline" size="sm">
